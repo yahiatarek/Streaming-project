@@ -2,6 +2,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "UploadServiceApplication",
+      "request": "launch",
+      "mainClass": "com.upload.upload_service.UploadServiceApplication",
+      "projectName": ""
+    },
+    {
+      "type": "java",
       "name": "LimitsServiceApplication",
       "request": "launch",
       "mainClass": "com.example.limits_service.LimitsServiceApplication",
