@@ -3,14 +3,14 @@ package com.upload.upload_service.Services;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.upload.upload_service.DTO.VideoDto;
 import com.upload.upload_service.Entities.Video;
 import com.upload.upload_service.Repositories.VideoRepository;
@@ -19,13 +19,13 @@ import com.upload.upload_service.Repositories.VideoRepository;
 public class VideoService {
 
     private final VideoRepository videoRepository;
-    private final Path videoStorageDirectory;
+    private final Cloudinary cloudinary;
 
     public VideoService(
             VideoRepository videoRepository,
-            @Value("${upload.storage.video-directory:uploads/videos}") String videoStorageDirectory) {
+            Cloudinary cloudinary) {
         this.videoRepository = videoRepository;
-        this.videoStorageDirectory = Paths.get(videoStorageDirectory).toAbsolutePath().normalize();
+        this.cloudinary = cloudinary;
     }
 
     public VideoDto uploadVideo(MultipartFile file) {
@@ -34,29 +34,41 @@ public class VideoService {
         }
 
         String storedFileName = buildStoredFileName(file.getOriginalFilename());
-        Path storedFilePath = saveFile(file, storedFileName);
+        Map<String, ?> uploadResult = uploadToCloudinary(file, storedFileName);
 
         Video video = new Video();
         video.setTitle(file.getOriginalFilename());
         video.setDescription("Uploaded file: " + file.getOriginalFilename());
         video.setOriginalFileName(file.getOriginalFilename());
-        video.setStoragePath(storedFilePath.toString());
+        video.setStoragePath((String) uploadResult.get("secure_url"));
         video.setContentType(file.getContentType());
         video.setSizeInBytes(file.getSize());
+        video.setDurationInSeconds(toLong(uploadResult.get("duration")));
+        video.setWidth(toInteger(uploadResult.get("width")));
+        video.setHeight(toInteger(uploadResult.get("height")));
         video.setStatus("UPLOADED");
 
         Video savedVideo = videoRepository.save(video);
         return toDto(savedVideo);
     }
 
-    private Path saveFile(MultipartFile file, String storedFileName) {
+    private Map<String, ?> uploadToCloudinary(MultipartFile file, String storedFileName) {
+        Path temporaryFile = null;
         try {
-            Files.createDirectories(videoStorageDirectory);
-            Path targetPath = videoStorageDirectory.resolve(storedFileName).normalize();
-            Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-            return targetPath;
+            temporaryFile = Files.createTempFile("cloudinary-upload-", "-" + storedFileName);
+            file.transferTo(temporaryFile);
+
+            return cloudinary.uploader().uploadLarge(
+                    temporaryFile.toFile(),
+                    ObjectUtils.asMap(
+                            "resource_type", "video",
+                            "folder", "my-streaming-app",
+                            "public_id", removeExtension(storedFileName),
+                            "overwrite", true));
         } catch (IOException exception) {
-            throw new IllegalStateException("Failed to store uploaded video", exception);
+            throw new IllegalStateException("Failed to upload video to Cloudinary", exception);
+        } finally {
+            deleteTemporaryFile(temporaryFile);
         }
     }
 
@@ -65,12 +77,47 @@ public class VideoService {
         return UUID.randomUUID() + "-" + safeFileName;
     }
 
+    private String removeExtension(String fileName) {
+        int extensionIndex = fileName.lastIndexOf('.');
+        if (extensionIndex <= 0) {
+            return fileName;
+        }
+        return fileName.substring(0, extensionIndex);
+    }
+
+    private Long toLong(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return null;
+    }
+
+    private Integer toInteger(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return null;
+    }
+
+    private void deleteTemporaryFile(Path temporaryFile) {
+        if (temporaryFile == null) {
+            return;
+        }
+
+        try {
+            Files.deleteIfExists(temporaryFile);
+        } catch (IOException exception) {
+            // Upload succeeded or failed already; temp-file cleanup failure should not hide that result.
+        }
+    }
+
     private VideoDto toDto(Video video) {
         VideoDto dto = new VideoDto();
         dto.setId(video.getId());
         dto.setTitle(video.getTitle());
         dto.setDescription(video.getDescription());
         dto.setOriginalFileName(video.getOriginalFileName());
+        dto.setStoragePath(video.getStoragePath());
         dto.setContentType(video.getContentType());
         dto.setSizeInBytes(video.getSizeInBytes());
         dto.setDurationInSeconds(video.getDurationInSeconds());
