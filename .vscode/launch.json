@@ -2,6 +2,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "ServiceRegistryApplication",
+      "request": "launch",
+      "mainClass": "com.example.service_registry.ServiceRegistryApplication",
+      "projectName": "service-registry"
+    },
+    {
+      "type": "java",
       "name": "UploadServiceApplication",
       "request": "launch",
       "mainClass": "com.upload.upload_service.UploadServiceApplication",
