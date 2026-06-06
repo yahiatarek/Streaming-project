@@ -1,3 +1,5 @@
+# to run compose locally: docker compose --env-file .env.prod up --build
+
 services:
   service-registry:
     build:
@@ -19,9 +21,10 @@ services:
     ports:
       - "8888:8888"
     environment:
-      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: file:///config-repo
-    volumes:
-      - ./limits:/config-repo:ro
+      SPRING_CLOUD_CONFIG_SERVER_GIT_URI: ${CONFIG_REPO_URI}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME: ${CONFIG_REPO_USERNAME}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD: ${CONFIG_REPO_TOKEN}
+      SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_REPO_BRANCH:-main}
     depends_on:
       service-registry:
         condition: service_healthy
