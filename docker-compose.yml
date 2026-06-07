@@ -4,12 +4,33 @@
 # Then run compose locally:
 #   sh scripts/start-compose.sh
 
+x-tracing-env: &tracing-env
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+  MANAGEMENT_TRACING_EXPORT_ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+  LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+  LOGGING_PATTERN_LEVEL: "%5p [%X{traceId:-}, %X{spring.application.name:-}:%X{spring.application.instance_id:-}]"
+
 services:
   service-registry:
     image: service-registry:0.0.1-SNAPSHOT
     container_name: service-registry
     ports:
       - "8761:8761"
+    environment:
+      <<: *tracing-env
+    depends_on:
+      zipkin:
+        condition: service_started
+
+  # this should be run for local tracing
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    environment:
+      STORAGE_TYPE: mem
+    restart: unless-stopped
 
   config-server:
     image: spring-cloud-config-server:0.0.1-SNAPSHOT
@@ -17,11 +38,14 @@ services:
     ports:
       - "8888:8888"
     environment:
+      <<: *tracing-env
       SPRING_CLOUD_CONFIG_SERVER_GIT_URI: ${CONFIG_REPO_URI}
       SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME: ${CONFIG_REPO_USERNAME}
       SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD: ${CONFIG_REPO_TOKEN}
       SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_REPO_BRANCH:-main}
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
 
@@ -31,10 +55,13 @@ services:
     ports:
       - "8089:8089"
     environment:
+      <<: *tracing-env
       SERVER_PORT: 8089
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
       config-server:
@@ -44,15 +71,15 @@ services:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-1
     environment:
+      <<: *tracing-env
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
-      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
       config-server:
@@ -62,15 +89,15 @@ services:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-2
     environment:
+      <<: *tracing-env
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
-      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
       config-server:
@@ -80,15 +107,15 @@ services:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-3
     environment:
+      <<: *tracing-env
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
-      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
       config-server:
@@ -98,15 +125,15 @@ services:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-4
     environment:
+      <<: *tracing-env
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
-      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
       config-server:
@@ -118,9 +145,12 @@ services:
     ports:
       - "8765:8765"
     environment:
+      <<: *tracing-env
       SERVER_PORT: 8765
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
     depends_on:
+      zipkin:
+        condition: service_started
       service-registry:
         condition: service_started
       config-server:
@@ -135,12 +165,3 @@ services:
         condition: service_started
       upload-service-4:
         condition: service_started
-  # this should be run for local tracing
-  zipkin:
-    image: openzipkin/zipkin:latest
-    container_name: zipkin
-    ports:
-      - "9411:9411"
-    environment:
-      STORAGE_TYPE: mem
-    restart: unless-stopped
