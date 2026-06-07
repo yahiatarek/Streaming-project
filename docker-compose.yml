@@ -1,22 +1,18 @@
-# to run compose locally: docker compose --env-file .env.prod up --build
+# Build Spring Boot images first:
+#   sh scripts/build-images.sh
+#
+# Then run compose locally:
+#   sh scripts/start-compose.sh
 
 services:
   service-registry:
-    build:
-      context: ./service-registry
+    image: service-registry:0.0.1-SNAPSHOT
     container_name: service-registry
     ports:
       - "8761:8761"
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8761'"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
 
   config-server:
-    build:
-      context: ./spring-cloud-config-server
+    image: spring-cloud-config-server:0.0.1-SNAPSHOT
     container_name: config-server
     ports:
       - "8888:8888"
@@ -27,97 +23,97 @@ services:
       SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL: ${CONFIG_REPO_BRANCH:-main}
     depends_on:
       service-registry:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8888'"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
+        condition: service_started
 
   limits-service:
-    build:
-      context: ./limits-service
+    image: limits-service:0.0.1-SNAPSHOT
     container_name: limits-service
     ports:
       - "8089:8089"
     environment:
       SERVER_PORT: 8089
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
     depends_on:
       service-registry:
-        condition: service_healthy
+        condition: service_started
       config-server:
-        condition: service_healthy
+        condition: service_started
 
   upload-service-1:
-    build:
-      context: ./upload-service
+    image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-1
     environment:
       SERVER_PORT: 0
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/upload-service-db
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
+      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
       service-registry:
-        condition: service_healthy
+        condition: service_started
       config-server:
-        condition: service_healthy
+        condition: service_started
 
   upload-service-2:
-    build:
-      context: ./upload-service
+    image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-2
     environment:
       SERVER_PORT: 0
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/upload-service-db
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
+      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
       service-registry:
-        condition: service_healthy
+        condition: service_started
       config-server:
-        condition: service_healthy
+        condition: service_started
 
   upload-service-3:
-    build:
-      context: ./upload-service
+    image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-3
     environment:
       SERVER_PORT: 0
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/upload-service-db
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
+      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
       service-registry:
-        condition: service_healthy
+        condition: service_started
       config-server:
-        condition: service_healthy
+        condition: service_started
 
   upload-service-4:
-    build:
-      context: ./upload-service
+    image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-4
     environment:
       SERVER_PORT: 0
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/upload-service-db
+      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
+      # CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      # CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      # CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
       service-registry:
-        condition: service_healthy
+        condition: service_started
       config-server:
-        condition: service_healthy
+        condition: service_started
 
   api-gateway:
-    build:
-      context: ./api-gateway
+    image: api-gateway:0.0.1-SNAPSHOT
     container_name: api-gateway
     ports:
       - "8765:8765"
@@ -126,9 +122,9 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
     depends_on:
       service-registry:
-        condition: service_healthy
+        condition: service_started
       config-server:
-        condition: service_healthy
+        condition: service_started
       limits-service:
         condition: service_started
       upload-service-1:
@@ -139,3 +135,12 @@ services:
         condition: service_started
       upload-service-4:
         condition: service_started
+  # this should be run for local tracing
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    environment:
+      STORAGE_TYPE: mem
+    restart: unless-stopped
