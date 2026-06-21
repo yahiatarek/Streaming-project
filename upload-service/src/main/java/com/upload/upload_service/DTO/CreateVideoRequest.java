@@ -5,6 +5,7 @@ public class CreateVideoRequest {
     private String title;
     private String description;
     private String originalFileName;
+    private String storagePath;
     private String contentType;
     private Long sizeInBytes;
     private Long durationInSeconds;
@@ -33,6 +34,14 @@ public class CreateVideoRequest {
 
     public void setOriginalFileName(String originalFileName) {
         this.originalFileName = originalFileName;
+    }
+
+    public String getStoragePath() {
+        return storagePath;
+    }
+
+    public void setStoragePath(String storagePath) {
+        this.storagePath = storagePath;
     }
 
     public String getContentType() {

@@ -4,12 +4,14 @@ import java.net.URI;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
+import com.upload.upload_service.DTO.CreateVideoRequest;
+import com.upload.upload_service.DTO.UploadSignatureDto;
 import com.upload.upload_service.DTO.VideoDto;
 import com.upload.upload_service.Services.VideoService;
 
@@ -23,12 +25,17 @@ public class VideoController {
         this.videoService = videoService;
     }
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/upload", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<VideoDto> uploadVideo(
-            @RequestParam("file") MultipartFile file) {
-        VideoDto createdVideo = videoService.uploadVideo(file);
+            @RequestBody CreateVideoRequest request) {
+        VideoDto createdVideo = videoService.saveUploadedVideo(request);
         return ResponseEntity
                 .created(URI.create("/videos/" + createdVideo.getId()))
                 .body(createdVideo);
+    }
+
+    @GetMapping("/upload-signature")
+    public UploadSignatureDto createUploadSignature() {
+        return videoService.createUploadSignature();
     }
 }
