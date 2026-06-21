@@ -70,11 +70,14 @@ services:
   upload-service-1:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-1
+    ports:
+      - "8082:8082"
     environment:
       <<: *tracing-env
-      SERVER_PORT: 0
+      SERVER_PORT: 8082
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
       SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
+      SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS: true
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
