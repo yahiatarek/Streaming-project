@@ -1,5 +1,6 @@
 package com.upload.upload_service.Services;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -10,8 +11,10 @@ import com.cloudinary.Configuration;
 import com.cloudinary.utils.ObjectUtils;
 import com.upload.upload_service.DTO.CreateVideoRequest;
 import com.upload.upload_service.DTO.UploadSignatureDto;
+import com.upload.upload_service.DTO.UpdateVideoRequest;
 import com.upload.upload_service.DTO.VideoDto;
 import com.upload.upload_service.Entities.Video;
+import com.upload.upload_service.Exceptions.VideoNotFoundException;
 import com.upload.upload_service.Repositories.VideoRepository;
 
 @Service
@@ -63,10 +66,10 @@ public class VideoService {
         Video video = new Video();
         video.setTitle(firstNonBlank(request.getTitle(), request.getOriginalFileName()));
         video.setDescription(request.getDescription());
-        video.setOriginalFileName(requireText(request.getOriginalFileName(), "originalFileName"));
-        video.setStoragePath(requireText(request.getStoragePath(), "storagePath"));
-        video.setContentType(requireText(request.getContentType(), "contentType"));
-        video.setSizeInBytes(requireNonNull(request.getSizeInBytes(), "sizeInBytes"));
+        video.setOriginalFileName(request.getOriginalFileName());
+        video.setStoragePath(request.getStoragePath());
+        video.setContentType(request.getContentType());
+        video.setSizeInBytes(request.getSizeInBytes());
         video.setDurationInSeconds(request.getDurationInSeconds());
         video.setWidth(request.getWidth());
         video.setHeight(request.getHeight());
@@ -76,25 +79,39 @@ public class VideoService {
         return toDto(savedVideo);
     }
 
+    public List<VideoDto> getVideos() {
+        return videoRepository.findAll().stream()
+                .map(this::toDto)
+                .toList();
+    }
+
+    public VideoDto getVideo(Long id) {
+        return toDto(findVideo(id));
+    }
+
+    public VideoDto updateVideo(Long id, UpdateVideoRequest request) {
+        Video video = findVideo(id);
+        video.setTitle(request.getTitle());
+        video.setDescription(request.getDescription());
+        video.setStatus(request.getStatus());
+        return toDto(videoRepository.save(video));
+    }
+
+    public void deleteVideo(Long id) {
+        Video video = findVideo(id);
+        videoRepository.delete(video);
+    }
+
+    private Video findVideo(Long id) {
+        return videoRepository.findById(id)
+                .orElseThrow(() -> new VideoNotFoundException(id));
+    }
+
     private String firstNonBlank(String preferred, String fallback) {
         if (preferred != null && !preferred.isBlank()) {
             return preferred;
         }
-        return requireText(fallback, "title");
-    }
-
-    private String requireText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " is required");
-        }
-        return value;
-    }
-
-    private <T> T requireNonNull(T value, String fieldName) {
-        if (value == null) {
-            throw new IllegalArgumentException(fieldName + " is required");
-        }
-        return value;
+        return fallback;
     }
 
     private VideoDto toDto(Video video) {

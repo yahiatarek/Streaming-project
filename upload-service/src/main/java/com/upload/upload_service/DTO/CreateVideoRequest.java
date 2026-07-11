@@ -1,15 +1,39 @@
 package com.upload.upload_service.DTO;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+
 public class CreateVideoRequest {
 
+    @Size(max = 255, message = "title must not exceed 255 characters")
     private String title;
+
+    @Size(max = 1000, message = "description must not exceed 1000 characters")
     private String description;
+
+    @NotBlank(message = "originalFileName is required")
     private String originalFileName;
+
+    @NotBlank(message = "storagePath is required")
     private String storagePath;
+
+    @NotBlank(message = "contentType is required")
     private String contentType;
+
+    @NotNull(message = "sizeInBytes is required")
+    @Positive(message = "sizeInBytes must be greater than zero")
     private Long sizeInBytes;
+
+    @PositiveOrZero(message = "durationInSeconds must not be negative")
     private Long durationInSeconds;
+
+    @Positive(message = "width must be greater than zero")
     private Integer width;
+
+    @Positive(message = "height must be greater than zero")
     private Integer height;
 
     public String getTitle() {
