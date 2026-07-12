@@ -60,7 +60,7 @@ This keeps restarts from duplicating the sample videos.
 
 ## Persistence Stack
 
-This service uses Spring Data JPA to save `Video` records in a database.
+This service uses Spring Data JPA and Hibernate to save `Video` records in PostgreSQL.
 
 The full path looks like this:
 
@@ -71,49 +71,35 @@ VideoService
       -> JPA
         -> Hibernate
           -> JDBC
-            -> H2 database
+            -> PostgreSQL
 ```
 
-### H2
+### PostgreSQL
 
-H2 is the actual database engine used by this service during local development.
+PostgreSQL is the database engine used by this service during local development.
+Run it through Docker Compose:
 
-If the datasource URL uses `mem`, the database is temporary:
-
-```properties
-spring.datasource.url=jdbc:h2:mem:testdb
+```bash
+docker compose up -d postgres
 ```
 
-Data stored in an in-memory H2 database disappears when the app stops.
-
-To keep data after restarting the app, use file-based H2:
-
-```properties
-spring.datasource.url=jdbc:h2:file:./data/upload-service-db
-```
-
-This creates database files under `data/`, such as:
+The local development URI is:
 
 ```text
-data/upload-service-db.mv.db
+jdbc:postgresql://localhost:5432/upload_service
 ```
 
-### JDBC
+Inside Docker, services use the internal Docker hostname:
 
-JDBC is the low-level Java API used to communicate with databases.
+```text
+jdbc:postgresql://postgres:5432/upload_service
+```
 
-With plain JDBC, code would manually open connections, write SQL, set parameters, and read results.
-
-Spring Data JPA and Hibernate still use JDBC underneath, but the application code usually does not call JDBC directly.
-
-### JPA
-
-JPA is the Java standard for mapping Java objects to database tables.
-
-For example:
+### JPA entity
 
 ```java
 @Entity
+@Table(name = "videos")
 public class Video {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -121,27 +107,8 @@ public class Video {
 }
 ```
 
-`@Entity` means `Video` should be stored as a database table.
-
-JPA is a specification. It defines the rules and annotations, but it needs an implementation to do the real work.
-
-### Hibernate
-
-Hibernate is the JPA implementation used by Spring Boot by default.
-
-It reads the JPA annotations, tracks entity changes, creates SQL, inserts rows, updates rows, and loads data from the database.
-
-When this code runs:
-
-```java
-videoRepository.save(video);
-```
-
-Hibernate turns that into SQL similar to:
-
-```sql
-insert into video (...) values (...);
-```
+`@Entity` means `Video` should be stored in a relational table.
+`@GeneratedValue(strategy = GenerationType.IDENTITY)` lets PostgreSQL generate numeric ids.
 
 ### Spring Data JPA
 
@@ -169,15 +136,15 @@ That is why `VideoService` can persist a video with:
 Video savedVideo = videoRepository.save(video);
 ```
 
-### Schema Updates
+### Schema updates
 
-For local development, this setting keeps the schema in sync without dropping existing data:
+For local development, Hibernate keeps the PostgreSQL schema in sync with the entity model:
 
 ```properties
 spring.jpa.hibernate.ddl-auto=update
 ```
 
-Avoid these settings when you want data to survive restarts:
+Avoid destructive schema modes when you want data to survive restarts:
 
 ```properties
 spring.jpa.hibernate.ddl-auto=create

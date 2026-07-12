@@ -10,6 +10,12 @@ x-tracing-env: &tracing-env
   LOGGING_PATTERN_CONSOLE: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
   LOGGING_PATTERN_LEVEL: "%5p [%X{traceId:-}, %X{spring.application.name:-}:%X{spring.application.instance_id:-}]"
 
+x-postgres-env: &postgres-env
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-upload_service}
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
 services:
   service-registry:
     image: service-registry:0.0.1-SNAPSHOT
@@ -30,6 +36,25 @@ services:
       - "9411:9411"
     environment:
       STORAGE_TYPE: mem
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-upload_service}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
 
   config-server:
@@ -73,11 +98,9 @@ services:
     ports:
       - "8082:8082"
     environment:
-      <<: *tracing-env
+      <<: [*tracing-env, *postgres-env]
       SERVER_PORT: 8082
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
-      SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS: true
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
@@ -87,15 +110,16 @@ services:
         condition: service_started
       config-server:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   upload-service-2:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-2
     environment:
-      <<: *tracing-env
+      <<: [*tracing-env, *postgres-env]
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
@@ -105,15 +129,16 @@ services:
         condition: service_started
       config-server:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   upload-service-3:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-3
     environment:
-      <<: *tracing-env
+      <<: [*tracing-env, *postgres-env]
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
@@ -123,15 +148,16 @@ services:
         condition: service_started
       config-server:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   upload-service-4:
     image: upload-service:0.0.1-SNAPSHOT
     container_name: upload-service-4
     environment:
-      <<: *tracing-env
+      <<: [*tracing-env, *postgres-env]
       SERVER_PORT: 0
       SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/tmp/upload-service-db
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-registry:8761/eureka/
       EUREKA_INSTANCE_PREFER_IP_ADDRESS: true
     depends_on:
@@ -141,6 +167,8 @@ services:
         condition: service_started
       config-server:
         condition: service_started
+      postgres:
+        condition: service_healthy
 
   api-gateway:
     image: api-gateway:0.0.1-SNAPSHOT
@@ -168,3 +196,6 @@ services:
         condition: service_started
       upload-service-4:
         condition: service_started
+
+volumes:
+  postgres-data:

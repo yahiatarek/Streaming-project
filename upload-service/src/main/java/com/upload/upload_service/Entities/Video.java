@@ -9,8 +9,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "videos")
 public class Video {
 
     @Id
@@ -26,7 +28,7 @@ public class Video {
     @Column(nullable = false)
     private String originalFileName;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String storagePath;
 
     @Column(nullable = false)

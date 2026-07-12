@@ -28,11 +28,11 @@ and verification.
 | HATEOAS and HAL Explorer | Add links to video resources | TODO |
 | Static and dynamic filtering | Protect internal video metadata | TODO |
 | Actuator | Health and operational endpoints | IN PROGRESS |
-| JPA and Hibernate | Persist videos | DONE |
+| JPA and Hibernate | Persist videos in PostgreSQL | IN PROGRESS |
 | Entity relationships | User, Video, Category and Comment relationships | TODO |
 | Custom JPA queries | Search and filtering endpoints | TODO |
-| H2 | Local development database | DONE |
-| Production database | PostgreSQL or MySQL profile | TODO |
+| H2 | Replaced by local PostgreSQL for the upload-service | MODERNIZED |
+| Production database | PostgreSQL profile | IN PROGRESS |
 | Database migrations | Flyway migrations instead of schema auto-update | TODO |
 
 ## Security
