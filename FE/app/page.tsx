@@ -1,6 +1,7 @@
 "use client";
 
 import Hls from "hls.js";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const playbackUrl =
@@ -118,6 +119,9 @@ export default function Home() {
           This player uses the Cloudinary HLS playback URL. The player chooses
           the best available quality automatically.
         </p>
+        <Link className="text-link" href="/upload">
+          Upload a new video
+        </Link>
 
         <video
           ref={videoRef}

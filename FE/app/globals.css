@@ -54,6 +54,18 @@ h1 {
   margin-top: 24px;
 }
 
+.text-link {
+  color: var(--accent);
+  display: inline-flex;
+  font-weight: 700;
+  margin-top: 18px;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
 .video-player {
   aspect-ratio: 16 / 9;
   background: #020617;
@@ -75,4 +87,69 @@ h1 {
   color: var(--muted);
   font-size: 14px;
   margin-top: 12px;
+}
+
+.upload-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 32px;
+  max-width: 720px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.field input,
+.field textarea {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  color: var(--foreground);
+  font: inherit;
+  padding: 12px 14px;
+}
+
+.button {
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  color: #082f49;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 12px 20px;
+  width: fit-content;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+}
+
+.result-card {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 16px;
+  margin-top: 24px;
+  max-width: 960px;
+  overflow-wrap: anywhere;
+  padding: 20px;
+}
+
+.result-card h2 {
+  margin: 0 0 12px;
 }

@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {};
+const backendUrl =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8765/upload-service";
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/api/backend/:path*",
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
+  },
+};
 
 export default nextConfig;
