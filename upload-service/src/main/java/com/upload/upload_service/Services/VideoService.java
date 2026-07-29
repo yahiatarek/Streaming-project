@@ -10,8 +10,8 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.Configuration;
 import com.cloudinary.utils.ObjectUtils;
 import com.upload.upload_service.DTO.CreateVideoRequest;
-import com.upload.upload_service.DTO.UploadSignatureDto;
 import com.upload.upload_service.DTO.UpdateVideoRequest;
+import com.upload.upload_service.DTO.UploadSignatureDto;
 import com.upload.upload_service.DTO.VideoDto;
 import com.upload.upload_service.Entities.Video;
 import com.upload.upload_service.Exceptions.VideoNotFoundException;
@@ -73,7 +73,7 @@ public class VideoService {
         video.setDurationInSeconds(request.getDurationInSeconds());
         video.setWidth(request.getWidth());
         video.setHeight(request.getHeight());
-        video.setStatus("UPLOADED");
+        video.setStatus("READY");
 
         Video savedVideo = videoRepository.save(video);
         return toDto(savedVideo);

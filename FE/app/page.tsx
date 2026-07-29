@@ -4,9 +4,9 @@ import Hls from "hls.js";
 import { useEffect, useRef, useState } from "react";
 
 const playbackUrl =
-  "https://res.cloudinary.com/dvaebribq/video/upload/sp_auto/v1783865397/my-streaming-app/mys5otxoe1osmsyirhxu.m3u8";
+  "https://res.cloudinary.com/dvaebribq/video/upload/sp_auto/v1785346239/my-streaming-app/xkmy8mpajuyhikgqwb17.m3u8";
 const fallbackMp4Url =
-  "https://res.cloudinary.com/dvaebribq/video/upload/v1783865397/my-streaming-app/mys5otxoe1osmsyirhxu.mp4";
+  "https://res.cloudinary.com/dvaebribq/video/upload/v1785346239/my-streaming-app/xkmy8mpajuyhikgqwb17.mp4";
 
 export default function Home() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -41,8 +41,14 @@ export default function Home() {
     }
 
     const hls = new Hls({
+      backBufferLength: 0,
+      capLevelToPlayerSize: true,
       enableWorker: true,
       lowLatencyMode: false,
+      maxBufferLength: 10,
+      maxBufferSize: 15 * 1000 * 1000,
+      maxMaxBufferLength: 20,
+      startLevel: 0,
     });
 
     hls.attachMedia(video);
@@ -55,6 +61,15 @@ export default function Home() {
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       setStatus("HLS stream loaded. Press play.");
     });
+    hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
+      const level = hls.levels[data.level];
+
+      setStatus(
+        `Quality changed: ${level.width}x${level.height}, ${Math.round(
+          level.bitrate / 1000,
+        )} kbps`,
+      );
+    });
 
     hls.on(Hls.Events.LEVEL_LOADED, () => {
       setStatus("HLS level loaded. Press play.");
@@ -64,6 +79,15 @@ export default function Home() {
       console.error("HLS error", data);
 
       if (!data.fatal) {
+        return;
+      }
+
+      if (data.details === Hls.ErrorDetails.BUFFER_FULL_ERROR) {
+        hls.stopLoad();
+        hls.destroy();
+        video.src = fallbackMp4Url;
+        video.load();
+        setStatus("Browser buffer is full. Using MP4 fallback.");
         return;
       }
 
